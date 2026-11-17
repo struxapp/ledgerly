@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ledgerly · See where your money goes</title>
+    <meta
+      name="description"
+      content="A private monthly budget: add expenses and income by category, set budgets, and see where your money goes. No bank link, no account; your data stays in your browser."
+    />
+    <meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#111214" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to your month</a>
+    <header class="topbar">
+      <div class="wrap topbar-inner">
+        <a class="brand" href="./" aria-label="Ledgerly, home">
+          <span class="brand-mark" id="brand-mark"></span>
+          <span class="brand-name">Ledgerly</span>
+        </a>
+        <nav class="month-nav" aria-label="Month">
+          <button type="button" class="icon-button small" id="prev-month" aria-label="Previous month"></button>
+          <h1 class="month-title" id="month-title" aria-live="polite">Month</h1>
+          <button type="button" class="icon-button small" id="next-month" aria-label="Next month"></button>
+        </nav>
+        <div class="tools">
+          <label class="currency">
+            <span class="sr-only">Currency</span>
+            <select id="currency"></select>
+          </label>
+          <button type="button" class="icon-button" id="theme-toggle" aria-label="Switch theme"></button>
+          <button type="button" class="button primary" id="add-button"><span id="add-icon"></span><span>Add</span></button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="wrap">
+      <div class="example-banner" id="example-banner" hidden>
+        <span class="example-pill">Example data</span>
+        <p>Three months of a sample household budget, so you can see how Ledgerly works. Your own entries stay when you clear it.</p>
+        <button type="button" class="button" id="clear-example">Clear example data</button>
+      </div>
+
+      <section class="stats" aria-label="Month at a glance" id="stats"></section>
+
+      <div class="grid">
+        <section class="card" aria-labelledby="where-title">
+          <div class="card-head">
+            <h2 id="where-title">Where it went</h2>
+            <p class="card-note" id="where-note"></p>
+          </div>
+          <div class="where" id="where"></div>
+        </section>
+
+        <section class="card" aria-labelledby="budgets-title">
+          <div class="card-head">
+            <h2 id="budgets-title">Budgets</h2>
+            <button type="button" class="text-button" id="edit-budgets">Edit budgets</button>
+          </div>
+          <ul class="budgets" id="budgets"></ul>
+        </section>
+      </div>
+
+      <section class="card trend-card" aria-labelledby="trend-title">
+        <div class="card-head">
+          <h2 id="trend-title">Monthly trend</h2>
+          <p class="card-note">Spending by category, with income marked <span class="income-key" aria-hidden="true"></span></p>
+        </div>
+        <div class="trend-wrap" id="trend"></div>
+        <table class="sr-only" id="trend-table"></table>
+      </section>
+
+      <section class="card tx-card" aria-labelledby="tx-title">
+        <div class="card-head">
+          <h2 id="tx-title">Transactions</h2>
+          <div class="tx-tools">
+            <div class="segmented" role="group" aria-label="Show">
+              <button type="button" data-filter="all" aria-pressed="true">All</button>
+              <button type="button" data-filter="expense" aria-pressed="false">Expenses</button>
+              <button type="button" data-filter="income" aria-pressed="false">Income</button>
+            </div>
+            <button type="button" class="button ghost" id="import-button"><span id="import-icon"></span>Import CSV</button>
+            <button type="button" class="button ghost" id="export-button"><span id="export-icon"></span>Export CSV</button>
+            <input type="file" id="import-file" accept=".csv,text/csv" hidden />
+          </div>
+        </div>
+        <p class="filter-note" id="filter-note" hidden></p>
+        <ul class="tx-list" id="tx-list"></ul>
+      </section>
+    </main>
+
+    <footer class="footer wrap">
+      <p>
+        Ledgerly keeps everything in this browser's local storage: no bank link, no account, nothing sent anywhere. Export
+        a CSV to keep a copy. Changing the currency changes the symbol only; amounts are not converted.
+      </p>
+      <p class="footer-small">An example app by Strux</p>
+    </footer>
+
+    <dialog id="tx-dialog" class="dialog" aria-labelledby="tx-dialog-title">
+      <form method="dialog" id="tx-form" novalidate>
+        <div class="dialog-head">
+          <h2 id="tx-dialog-title">Add transaction</h2>
+          <button type="button" class="icon-button small" data-close aria-label="Close"></button>
+        </div>
+        <fieldset class="kind-toggle">
+          <legend class="sr-only">Type</legend>
+          <label><input type="radio" name="kind" value="expense" checked /><span>Expense</span></label>
+          <label><input type="radio" name="kind" value="income" /><span>Income</span></label>
+        </fieldset>
+        <label class="field">
+          <span>Amount</span>
+          <span class="amount-input"><span class="amount-symbol" id="amount-symbol">$</span><input id="tx-amount" name="amount" inputmode="decimal" autocomplete="off" required placeholder="0.00" /></span>
+        </label>
+        <div class="field-row">
+          <label class="field"><span>Category</span><select id="tx-category" name="category"></select></label>
+          <label class="field"><span>Date</span><input type="date" id="tx-date" name="date" required /></label>
+        </div>
+        <label class="field"><span>Note <small>(optional)</small></span><input id="tx-note" name="note" maxlength="120" autocomplete="off" placeholder="What was it?" /></label>
+        <p class="form-error" id="tx-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button type="button" class="button danger-ghost" id="tx-delete" hidden>Delete</button>
+          <span class="spacer"></span>
+          <button type="button" class="button" data-close>Cancel</button>
+          <button type="submit" class="button primary" id="tx-save">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="budget-dialog" class="dialog wide" aria-labelledby="budget-dialog-title">
+      <form method="dialog" id="budget-form" novalidate>
+        <div class="dialog-head">
+          <h2 id="budget-dialog-title">Monthly budgets</h2>
+          <button type="button" class="icon-button small" data-close aria-label="Close"></button>
+        </div>
+        <p class="dialog-note">Set how much you plan to spend each month in each category. Leave a budget empty for none.</p>
+        <ul class="budget-edit" id="budget-edit"></ul>
+        <div class="add-category">
+          <label class="field grow"><span>New category</span><input id="new-category" maxlength="40" placeholder="e.g. Pets" autocomplete="off" /></label>
+          <button type="button" class="button" id="add-category">Add category</button>
+        </div>
+        <p class="form-error" id="budget-error" role="alert"></p>
+        <div class="dialog-actions">
+          <span class="spacer"></span>
+          <button type="button" class="button" data-close>Cancel</button>
+          <button type="submit" class="button primary">Save budgets</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="import-dialog" class="dialog" aria-labelledby="import-dialog-title">
+      <form method="dialog" id="import-form">
+        <div class="dialog-head">
+          <h2 id="import-dialog-title">Import CSV</h2>
+          <button type="button" class="icon-button small" data-close aria-label="Close"></button>
+        </div>
+        <div id="import-summary"></div>
+        <div class="dialog-actions">
+          <span class="spacer"></span>
+          <button type="button" class="button" data-close>Cancel</button>
+          <button type="submit" class="button primary" id="import-confirm">Import</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div class="chart-tip" id="chart-tip" role="presentation"></div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
